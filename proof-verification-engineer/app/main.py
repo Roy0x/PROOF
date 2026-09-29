@@ -9,13 +9,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .engine import (
-    contract_to_dict,
-    generate_contract_with_nebius,
-    report_to_dict,
-    verify_contract,
-)
-from .store import get_pack, init_db, list_packs, save_pack
+from .core.contracts import contract_to_dict
+from .evidence.models import report_to_dict
+from .engine import verify_contract  # Compatibility verifier; moved API contracts use core modules.
+from .llm.nebius import generate_contract_with_nebius
+from .storage.sqlite import get_pack, init_db, list_packs, save_pack
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
