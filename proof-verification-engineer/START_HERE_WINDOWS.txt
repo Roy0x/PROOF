@@ -1,0 +1,27 @@
+PROOF - WINDOWS QUICK START
+===========================
+
+1. Extract the entire ZIP first. Do NOT run PROOF from inside the ZIP preview.
+2. Open the extracted folder.
+3. Double-click run.bat.
+4. Keep the black terminal window open.
+5. The browser should open http://127.0.0.1:8000 automatically.
+6. If it does not, type this exact address manually:
+      http://127.0.0.1:8000
+
+IMPORTANT
+---------
+- The first run installs free Python packages, so internet access is needed once.
+- No paid service or Nebius API key is needed for the local verification demo.
+- If Windows Firewall asks about Python, allow access on Private networks.
+- Do not close the terminal window while using the site.
+
+QUICK HEALTH CHECK
+------------------
+Open:
+  http://127.0.0.1:8000/api/health
+
+Expected result:
+  {"status":"ok", ...}
+
+If the site still cannot be reached, copy everything shown in the terminal window and send it to ChatGPT.

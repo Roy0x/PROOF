@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PROOF — Verification Engineer for AI Agents</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">P</span><div><strong>PROOF</strong><small>Verification Engineer</small></div></div>
+    <nav>
+      <button class="nav active" data-view="live"><span>◉</span> Live verification</button>
+      <button class="nav" data-view="dashboard"><span>⌁</span> Dashboard</button>
+      <button class="nav" data-view="packs"><span>▣</span> Proof Packs</button>
+      <button class="nav" data-view="architecture"><span>◇</span> Architecture</button>
+    </nav>
+    <div class="side-status">
+      <span id="provider-dot" class="dot"></span>
+      <div><strong id="provider-title">Checking runtime…</strong><small id="provider-subtitle">Nebius / local fallback</small></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><span class="eyebrow">AUTONOMOUS AGENT RELIABILITY</span><h1 id="view-title">Independent outcome verification</h1></div>
+      <div class="status-pill">₹0 local-first build</div>
+    </header>
+
+    <section id="view-live" class="view active">
+      <div class="hero-grid">
+        <div class="hero-copy panel">
+          <div class="hero-badge">WORKERS SHOULDN'T GRADE THEIR OWN WORK</div>
+          <h2>Agents act.<br><span>PROOF verifies.</span></h2>
+          <p>Give a worker agent a goal. PROOF freezes what success means, checks the real environment, returns evidence when the claim is wrong, then verifies the repaired outcome against the same contract.</p>
+          <label class="goal-label" for="goal">Worker goal</label>
+          <textarea id="goal">Fix the login bug and deploy the application.</textarea>
+          <button id="run-demo" class="primary">Run verification loop <span>→</span></button>
+          <p class="micro">Controlled demo: the worker will make a plausible false-completion claim. PROOF must catch it with real HTTP evidence.</p>
+        </div>
+
+        <div class="metric-stack">
+          <div class="metric-card"><span>Core loop</span><strong>Claim → Evidence → Repair → Reverify</strong></div>
+          <div class="metric-card"><span>Evidence policy</span><strong>Ask reality before asking an LLM</strong></div>
+          <div class="metric-card"><span>Initial domain</span><strong>Coding + deployment agents</strong></div>
+        </div>
+      </div>
+
+      <div id="run-stage" class="run-stage panel hidden">
+        <div class="run-head"><div><span class="eyebrow">LIVE RUN</span><h3 id="run-title">Preparing verification…</h3></div><span id="run-status" class="verdict running">RUNNING</span></div>
+        <div class="timeline" id="timeline"></div>
+        <div id="contract-block" class="detail-block hidden"></div>
+        <div id="verification-block" class="detail-block hidden"></div>
+        <div id="repair-block" class="detail-block hidden"></div>
+        <div id="final-block" class="detail-block hidden"></div>
+      </div>
+    </section>
+
+    <section id="view-dashboard" class="view">
+      <div class="cards three">
+        <div class="stat panel"><span>Proof Packs</span><strong id="stat-packs">0</strong><small>independent verification runs</small></div>
+        <div class="stat panel"><span>False completions caught</span><strong id="stat-caught">0</strong><small>worker claimed done; reality disagreed</small></div>
+        <div class="stat panel"><span>Repaired & verified</span><strong id="stat-verified">0</strong><small>same contract passed after repair</small></div>
+      </div>
+      <div class="panel concept">
+        <span class="eyebrow">THE PRODUCT</span>
+        <h2>The verification gap</h2>
+        <p>Worker agents can report success because they completed actions. PROOF measures something stricter: whether the requested outcome exists in the environment.</p>
+        <div class="gap-row"><div><span>Worker claim</span><strong>COMPLETED</strong></div><div class="arrow">≠</div><div><span>Independent verdict</span><strong>VERIFIED</strong></div></div>
+      </div>
+    </section>
+
+    <section id="view-packs" class="view">
+      <div class="panel">
+        <div class="section-head"><div><span class="eyebrow">AUDITABLE EVIDENCE</span><h2>Proof Packs</h2></div><button id="refresh-packs" class="secondary">Refresh</button></div>
+        <div id="packs-list" class="packs-list"><div class="empty">No verification runs yet. Run the live demo first.</div></div>
+      </div>
+    </section>
+
+    <section id="view-architecture" class="view">
+      <div class="panel architecture">
+        <span class="eyebrow">SUBMISSION ARCHITECTURE</span>
+        <h2>Reason about proof. Execute checks deterministically.</h2>
+        <div class="arch-flow">
+          <div class="node"><small>01</small><strong>User goal</strong><span>Natural-language outcome</span></div>
+          <div class="connector">→</div>
+          <div class="node accent"><small>02</small><strong>Nemotron</strong><span>Outcome Contract</span></div>
+          <div class="connector">→</div>
+          <div class="node"><small>03</small><strong>Verifier tools</strong><span>HTTP · API · shell</span></div>
+          <div class="connector">→</div>
+          <div class="node"><small>04</small><strong>Evidence</strong><span>Observed reality</span></div>
+          <div class="connector">→</div>
+          <div class="node accent"><small>05</small><strong>PROOF</strong><span>Verdict + repair loop</span></div>
+        </div>
+        <div class="principles">
+          <div><strong>Frozen goalposts</strong><p>The same Outcome Contract is reused after repair.</p></div>
+          <div><strong>Independent evidence</strong><p>The worker's own “done” message is never accepted as proof.</p></div>
+          <div><strong>Deterministic first</strong><p>HTTP codes, API state and tests outrank model judgment.</p></div>
+          <div><strong>Auditable result</strong><p>Every verdict produces a Proof Pack with expected vs observed state.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
