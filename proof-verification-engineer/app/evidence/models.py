@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any
+from uuid import uuid4
 
 
 @dataclass
@@ -24,6 +25,27 @@ class VerificationReport:
     blocked: int
     total: int
     evidence: list[Evidence]
+
+
+@dataclass(frozen=True)
+class VerificationEvidence:
+    condition_id: str
+    verifier_type: str
+    operation: str
+    expected: Any
+    observed: Any
+    status: str
+    run_id: str
+    evidence_id: str = ""
+    timestamp: str = ""
+    duration_seconds: float = 0.0
+    error: str | None = None
+    artifacts: tuple[str, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.evidence_id:
+            object.__setattr__(self, "evidence_id", uuid4().hex)
 
 
 def report_to_dict(report: VerificationReport) -> dict[str, Any]:

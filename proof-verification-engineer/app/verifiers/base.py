@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from app.core.contracts import Condition
-from app.evidence.models import Evidence
+from app.evidence.models import VerificationEvidence
+from .models import VerificationContext, VerificationStep
 
 
 class Verifier(ABC):
     @abstractmethod
-    async def verify(self, condition: Condition) -> Evidence:
+    def verify(self, condition_id: str, step: VerificationStep, context: VerificationContext) -> VerificationEvidence:
         """Independently collect evidence for one fixed contract condition."""
