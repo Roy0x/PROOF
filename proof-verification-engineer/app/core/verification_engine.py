@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from dataclasses import field
 from datetime import datetime, timezone
 from time import monotonic
 from uuid import uuid4
@@ -13,10 +14,11 @@ class ConditionResult:
 @dataclass
 class ProofPackV3:
     run_id: str; contract_id: str; contract_version: int; goal: str; verdict: str; condition_results: list[ConditionResult]; evidence: list[VerificationEvidence]; started_at: str; completed_at: str; duration_seconds: float
+    intelligence: dict = field(default_factory=dict)
 
 class VerificationEngine:
     def __init__(self, registry: VerifierRegistry) -> None: self.registry = registry
-    def verify(self, goal: str, plan: VerificationPlan, context: VerificationContext) -> ProofPackV3:
+    def verify(self, goal: str, plan: VerificationPlan, context: VerificationContext, *, intelligence: dict | None = None) -> ProofPackV3:
         started = monotonic(); evidence=[]; results=[]; prior={}
         for condition in plan.conditions:
             bad = next((x for x in condition.prerequisites if prior.get(x) != "VERIFIED"), None)
@@ -30,4 +32,4 @@ class VerificationEngine:
                 evidence.extend(items); status=next((s for s in ("FAILED","BLOCKED","INCONCLUSIVE") if any(i.status==s for i in items)), "VERIFIED")
             prior[condition.condition_id]=status; results.append(ConditionResult(condition.condition_id,condition.description,condition.critical,status,[e.evidence_id for e in evidence if e.condition_id==condition.condition_id],bad))
         critical=[r.status for r in results if r.critical]; verdict=next((s for s in ("FAILED","BLOCKED","INCONCLUSIVE") if s in critical), "VERIFIED")
-        return ProofPackV3(context.run_id,plan.contract_id,plan.contract_version,goal,verdict,results,evidence,datetime.now(timezone.utc).isoformat(),datetime.now(timezone.utc).isoformat(),monotonic()-started)
+        return ProofPackV3(context.run_id,plan.contract_id,plan.contract_version,goal,verdict,results,evidence,datetime.now(timezone.utc).isoformat(),datetime.now(timezone.utc).isoformat(),monotonic()-started,intelligence or {})

@@ -38,14 +38,14 @@ VERIFIED
 
 - A polished local web application.
 - Outcome Contract schema.
-- Optional NVIDIA Nemotron contract generation through Nebius Token Factory.
+- NVIDIA Nemotron contract compilation and bounded plan generation through Nebius Token Factory (v0.4 backend).
 - Deterministic HTTP/API verification tools.
 - A controlled coding/deployment demo with a realistic production-only auth failure.
 - Evidence-backed FAIL / BLOCKED / VERIFIED verdicts.
 - Repair → re-verification loop using the **same frozen contract**.
 - SQLite Proof Pack persistence.
 - Dashboard and audit trail UI.
-- Zero-cost local fallback when no model key is present.
+- Zero-cost deterministic v0.3 demo and offline mocked v0.4 tests.
 
 ## Built-in demo
 
@@ -83,7 +83,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 Open `http://localhost:8000`.
 
-No Nebius key is needed for the local demo; the app uses a deterministic contract fallback so development never depends on paid APIs.
+No Nebius key is needed for the local v0.3 demo. The v0.4 preparation endpoint returns a structured error if live inference is unavailable.
 
 ## Enable NVIDIA Nemotron on Nebius Token Factory
 
@@ -92,12 +92,16 @@ Create `.env` or set environment variables:
 ```bash
 NEBIUS_API_KEY=your_key
 NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1
-NEBIUS_MODEL=nvidia/Nemotron-3_5-Lightning
+PROOF_NEMOTRON_MODEL=nvidia/Nemotron-3_5-Lightning
 ```
 
 Then export/load the variables before starting the server.
 
-PROOF uses Nemotron for the reasoning-heavy step: converting an ambiguous human goal into a constrained Outcome Contract. Deterministic software still evaluates HTTP status, authentication behavior, and regression state.
+The v0.4 backend uses Nemotron to compile a frozen Outcome Contract, then makes one sequential planner call per frozen condition. Each planner response contains only a bounded `steps` array; PROOF validates the steps against the trusted capability manifest and assembles the plan with the original condition IDs, order, and prerequisites. Nemotron cannot add conditions or decide the verdict. The v0.3 verifiers and deterministic VerificationEngine still collect evidence and calculate the verdict.
+
+Set `PROOF_PRODUCTION_BASE_URL` in the server environment before calling `POST /api/v0.4/prepare` with `{"goal":"Fix the login bug and deploy the application."}`. Optional trusted configuration is `PROOF_WORKSPACE`, `PROOF_ROUTES_JSON`, `PROOF_SELECTORS_JSON`, `PROOF_TEST_USERNAME`, and `PROOF_TEST_PASSWORD`. The last two become credential references in model prompts and are resolved only during browser execution. The response contains the frozen contract and validated plan; the Python `IntelligenceWorkflow.verify` method runs that prepared plan and attaches provenance to Proof Pack v3. The existing web demo remains a v0.3 compatibility flow with a deterministic fallback when no key is configured.
+
+The normal test suite uses fake model responses and never calls Nebius. Two separate live smoke tests are available only when `PROOF_RUN_LIVE_NEBIUS_TESTS=1` and `NEBIUS_API_KEY` are set. Run `./.venv/Scripts/python.exe -m pytest -q tests/live/test_nebius_smoke.py -s` for contract compilation or `./.venv/Scripts/python.exe -m pytest -q tests/live/test_nebius_planner_smoke.py -s` for a locally frozen, one-condition step-only plan. Each test makes one inference request, reports model and latency, and never prints the key. Development caching is deferred to keep v0.4's trust boundary simple.
 
 > Design principle: **Do not ask an LLM what reality can answer directly.**
 
@@ -105,6 +109,7 @@ PROOF uses Nemotron for the reasoning-heavy step: converting an ambiguous human 
 
 - `GET /api/health`
 - `POST /api/contracts/generate`
+- `POST /api/v0.4/prepare`
 - `POST /api/demo/run`
 - `POST /api/demo/reset`
 - `POST /api/demo/repair`
@@ -126,7 +131,7 @@ Verification Planner
     │
     ├──── HTTP verifier
     ├──── API verifier
-    └──── future: browser / shell verifier
+    └──── browser / shell verifiers
     │
     ▼
 Evidence Store
@@ -138,15 +143,7 @@ Evidence Store
 
 ## Submission roadmap
 
-Next additions should be made in this order:
-
-1. Playwright browser verifier + screenshots.
-2. Shell/test-runner verifier inside an isolated local sandbox.
-3. Adapter interface for an external worker agent.
-4. Verification-plan generation for arbitrary web-app tasks.
-5. Controlled reliability benchmark (true success vs false completion).
-6. Small second-domain proof to demonstrate generality.
-7. Hosted demo and 3-minute submission video.
+The v0.4 backend covers contract compilation, plan validation, deterministic execution, and provenance. The UI remains the v0.3 demo; connecting its controlled login scenario to the v0.4 preparation endpoint is future work.
 
 Do **not** expand into observability, generic benchmarks, security scanning, or a full agent framework before the verification loop is reliable.
 
@@ -158,7 +155,7 @@ The project is designed to run locally without paid infrastructure. Nebius calls
 
 - The current execution tools are deliberately constrained to the included web-app verification scenario.
 - A `VERIFIED` result means the defined Outcome Contract passed against collected evidence. It is not a mathematical proof of universal correctness.
-- Browser screenshots and isolated shell verification are roadmap items, not silently simulated features.
+- The live Nemotron smoke test remains opt-in and requires a configured API key.
 
 ## License
 

@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from .api.intelligence import router as intelligence_router
 
 from .core.contracts import contract_to_dict
 from .evidence.models import report_to_dict
@@ -20,6 +21,7 @@ STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="PROOF — Verification Engineer for AI Agents", version="0.1.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.include_router(intelligence_router)
 
 # Controlled demo application state. The worker initially deploys a subtle production bug.
 demo_state: dict[str, Any] = {"release": "broken", "repair_cycles": 0}
@@ -49,7 +51,7 @@ def health() -> dict[str, Any]:
         "status": "ok",
         "product": "PROOF",
         "nebius_configured": bool(os.getenv("NEBIUS_API_KEY")),
-        "model": os.getenv("NEBIUS_MODEL", "nvidia/Nemotron-3_5-Lightning"),
+        "model": os.getenv("PROOF_NEMOTRON_MODEL", "nvidia/Nemotron-3_5-Lightning"),
     }
 
 

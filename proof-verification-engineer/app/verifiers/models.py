@@ -23,6 +23,7 @@ class VerificationPlan:
     contract_id: str
     contract_version: int
     conditions: tuple[PlannedCondition, ...]
+    provenance: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class VerificationContext:
@@ -31,3 +32,5 @@ class VerificationContext:
     workspace: str | None = None
     artifact_root: str = "artifacts/verification"
     timeout_seconds: float = 5.0
+    credentials: dict[str, str] = field(default_factory=dict, repr=False)
+    allowed_origin: str | None = None

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import monotonic
 from uuid import uuid4
+from urllib.parse import urlsplit
 
 from app.evidence.models import VerificationEvidence
 from .base import Verifier
@@ -23,15 +24,31 @@ class BrowserVerifier(Verifier):
         try:
             from playwright.sync_api import sync_playwright
             if context.run_id not in self._sessions:
-                p = sync_playwright().start(); browser = p.chromium.launch(); self._sessions[context.run_id] = (p, browser, browser.new_page())
+                p = sync_playwright().start(); browser = p.chromium.launch(); page = browser.new_page()
+                if context.allowed_origin:
+                    allowed = urlsplit(context.allowed_origin)
+                    def bound_route(route):
+                        requested = urlsplit(route.request.url)
+                        if (requested.scheme, requested.netloc.lower()) == (allowed.scheme, allowed.netloc.lower()):
+                            route.continue_()
+                        else:
+                            route.abort()
+                    page.route("**/*", bound_route)
+                self._sessions[context.run_id] = (p, browser, page)
             p, browser, page = self._sessions[context.run_id]
             target = step.target or ""; observed = None
             if step.operation == "navigate": page.goto(target, timeout=int(context.timeout_seconds*1000)); observed = page.url
-            elif step.operation == "fill": page.locator(target).fill(str(step.expected)); observed = "filled"
+            elif step.operation == "fill":
+                credential_ref = step.params.get("credential_ref")
+                value = context.credentials.get(credential_ref) if credential_ref else step.expected
+                if value is None: raise ValueError("Credential reference is unavailable")
+                page.locator(target).fill(str(value)); observed = "filled"
             elif step.operation == "click": page.locator(target).click(); observed = "clicked"
             elif step.operation == "wait_for": page.locator(target).wait_for(timeout=int(context.timeout_seconds*1000)); observed = "ready"
             elif step.operation == "assert_text": observed = page.locator(target).inner_text(); assert str(step.expected) in observed
-            elif step.operation == "assert_url": observed = page.url; assert str(step.expected) in observed
+            elif step.operation == "assert_url":
+                observed = page.url
+                assert observed == step.expected if step.params.get("exact") else str(step.expected) in observed
             elif step.operation == "assert_visible": observed = page.locator(target).is_visible(); assert observed is True
             else: observed = page.locator(target).is_hidden(); assert observed is True
             return VerificationEvidence(**common, observed=observed, status="VERIFIED", duration_seconds=monotonic()-started, metadata={"url": page.url, "target": target})
@@ -40,7 +57,8 @@ class BrowserVerifier(Verifier):
             try:
                 artifact = self._artifact(context); page.screenshot(path=str(artifact)); artifacts = (str(artifact),)
             except Exception: pass
-            return VerificationEvidence(**common, observed=None, status="FAILED", error=f"{type(exc).__name__}: {exc}", artifacts=artifacts, duration_seconds=monotonic()-started)
+            error = "Browser fill failed" if step.operation == "fill" else f"{type(exc).__name__}: {exc}"
+            return VerificationEvidence(**common, observed=None, status="FAILED", error=error, artifacts=artifacts, duration_seconds=monotonic()-started)
 
     def close(self, run_id: str) -> None:
         session = self._sessions.pop(run_id, None)
