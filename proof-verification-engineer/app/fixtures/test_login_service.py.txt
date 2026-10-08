@@ -1,0 +1,23 @@
+import sqlite3
+
+from login_service import authenticate, session_user
+
+
+def test_valid_login_creates_session():
+    connection = sqlite3.connect(":memory:")
+    connection.execute("CREATE TABLE users (email TEXT PRIMARY KEY, password TEXT NOT NULL)")
+    connection.execute("CREATE TABLE auth_sessions (session_id TEXT PRIMARY KEY, email TEXT NOT NULL)")
+    connection.execute("INSERT INTO users VALUES (?, ?)", ("demo@proof.local", "fake-test-password"))
+    session_id = authenticate(connection, "demo@proof.local", "fake-test-password")
+    assert session_id and session_user(connection, session_id) == "demo@proof.local"
+    connection.close()
+
+
+def test_invalid_login_does_not_create_session():
+    connection = sqlite3.connect(":memory:")
+    connection.execute("CREATE TABLE users (email TEXT PRIMARY KEY, password TEXT NOT NULL)")
+    connection.execute("CREATE TABLE auth_sessions (session_id TEXT PRIMARY KEY, email TEXT NOT NULL)")
+    connection.execute("INSERT INTO users VALUES (?, ?)", ("demo@proof.local", "fake-test-password"))
+    assert authenticate(connection, "demo@proof.local", "wrong") is None
+    assert connection.execute("SELECT COUNT(*) FROM auth_sessions").fetchone()[0] == 0
+    connection.close()

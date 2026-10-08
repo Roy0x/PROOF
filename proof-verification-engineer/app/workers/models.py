@@ -32,10 +32,27 @@ class WorkerClaim:
     release: str | None = None
 
 @dataclass(frozen=True)
+class FailedEvidenceReference:
+    evidence_id: str
+    condition_id: str
+    operation: str
+    expected: str
+    observed: str
+    status: Literal["FAILED"]
+
+@dataclass(frozen=True)
 class RepairRequest:
     task_id: str
     evidence: tuple[str, ...]
     instructions: str
+    failed_evidence: tuple[FailedEvidenceReference, ...] = ()
+
+@dataclass(frozen=True)
+class WorkerAction:
+    name: str
+    target: str
+    outcome: str
+    duration_seconds: float
 
 @dataclass
 class WorkerExecutionResult:
@@ -45,3 +62,4 @@ class WorkerExecutionResult:
     changed_files: list[ChangedFile]
     command_results: list[CommandResult]
     started_at: float = field(default_factory=monotonic)
+    actions: list[WorkerAction] = field(default_factory=list)

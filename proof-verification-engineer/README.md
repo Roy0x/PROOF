@@ -141,6 +141,14 @@ Evidence Store
     └──── FAILED ─────► Repair context ─► Worker ─► Reverify
 ```
 
+## v0.5 controlled coding-worker loop
+
+Run the offline end-to-end demonstration with `.\.venv\Scripts\python.exe -m app.demo_v05` on Windows. It creates a disposable task workspace under the OS temporary directory and saves two separate Proof Packs to another temporary directory; the printed paths remain available after the app and workspace shut down. No Nebius key, external network, Docker, or real deployment is used.
+
+The deterministic worker edits a real login-service source file, runs local SQLite regression tests, and starts that code on `127.0.0.1` with a separate production SQLite database. The local database has the required `auth_sessions` table; the production database initially does not. The worker claims `COMPLETED` after local checks, but PROOF's existing HTTP, Browser, and Shell verifiers find that production authentication fails. A failed schema diagnostic supplies `expected=True, observed=False` evidence; the controlled repair applies the missing migration to the disposable production database. PROOF reruns the same frozen contract and validated plan, collecting fresh evidence and preserving the first `FAILED` Proof Pack before the second `VERIFIED` pack.
+
+The contract and step-only planner use fixed local mock responses for this repeatable demo. This is a real state-changing worker and independent verification loop, **not** an autonomous AI coding agent or a live Nemotron inference run. The older in-memory web demo remains available for compatibility.
+
 ## Submission roadmap
 
 The v0.4 backend covers contract compilation, plan validation, deterministic execution, and provenance. The UI remains the v0.3 demo; connecting its controlled login scenario to the v0.4 preparation endpoint is future work.

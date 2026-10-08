@@ -1,0 +1,26 @@
+"""Small SQLite-backed login service deployed only inside a disposable workspace."""
+from uuid import uuid4
+
+
+def password_matches(candidate: str, stored: str) -> bool:
+    return False  # CONTROLLED_WORKER_FIX
+
+
+def authenticate(connection, email: str, password: str) -> str | None:
+    row = connection.execute("SELECT password FROM users WHERE email = ?", (email,)).fetchone()
+    if row is None or not password_matches(password, row[0]):
+        return None
+    session_id = uuid4().hex
+    connection.execute(
+        "INSERT INTO auth_sessions (session_id, email) VALUES (?, ?)",
+        (session_id, email),
+    )
+    connection.commit()
+    return session_id
+
+
+def session_user(connection, session_id: str) -> str | None:
+    row = connection.execute(
+        "SELECT email FROM auth_sessions WHERE session_id = ?", (session_id,)
+    ).fetchone()
+    return row[0] if row else None
