@@ -39,6 +39,10 @@ class FailedEvidenceReference:
     expected: str
     observed: str
     status: Literal["FAILED"]
+    target_ref: str | None = None
+    route_ref: str | None = None
+    json_path: str | None = None
+    source_run_id: str | None = None
 
 @dataclass(frozen=True)
 class RepairRequest:
@@ -46,6 +50,8 @@ class RepairRequest:
     evidence: tuple[str, ...]
     instructions: str
     failed_evidence: tuple[FailedEvidenceReference, ...] = ()
+    source_run_id: str | None = None
+    contract_id: str | None = None
 
 @dataclass(frozen=True)
 class WorkerAction:

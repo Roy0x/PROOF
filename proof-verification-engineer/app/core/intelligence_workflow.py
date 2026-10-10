@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
+from typing import Callable
 from urllib.parse import urlsplit
 
 from app.core.intelligence import FrozenOutcomeContract, PlanningError, TrustedContext
@@ -30,10 +31,19 @@ class IntelligenceWorkflow:
         content = {"contract": prepared.contract.model_dump(mode="json"), "plan": asdict(prepared.plan)}
         return sha256(json.dumps(content, sort_keys=True, default=str).encode()).hexdigest()
 
-    def prepare(self, goal: str) -> PreparedVerification:
-        contract = OutcomeContractCompiler(self._client).compile(goal, self._context)
-        plan = VerificationPlanner(self._client).plan(contract, self._context.manifest(), self._context)
+    def prepare(self, goal: str, *, trusted_requirements: tuple[dict[str, str], ...] | None = None,
+                required_checks: dict[str, dict] | None = None,
+                contract_guard: Callable[[FrozenOutcomeContract], None] | None = None,
+                plan_guard: Callable[[PreparedVerification], None] | None = None) -> PreparedVerification:
+        contract = OutcomeContractCompiler(self._client).compile(
+            goal, self._context, trusted_requirements=trusted_requirements)
+        if contract_guard is not None:
+            contract_guard(contract)  # before any planner calls
+        plan = VerificationPlanner(self._client).plan(
+            contract, self._context.manifest(), self._context, required_checks=required_checks)
         prepared = PreparedVerification(contract, plan)
+        if plan_guard is not None:
+            plan_guard(prepared)
         self._prepared_hashes[contract.contract_id] = self._fingerprint(prepared)
         return prepared
 

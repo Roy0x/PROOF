@@ -28,6 +28,8 @@ class ConditionProposal(StrictModel):
     description: str = Field(min_length=5, max_length=300)
     critical: StrictBool
     prerequisites: tuple[str, ...] = ()
+    acceptance_ref: str | None = Field(default=None, min_length=1, max_length=32,
+                                        pattern=r"^[a-z][a-z0-9_]*$")
 
     @field_validator("description")
     @classmethod

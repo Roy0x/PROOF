@@ -205,12 +205,23 @@ class NemotronCodingWorkerAdapter(SqliteLoginWorkerAdapter):
         original = self._results.get(request.task_id)
         if original is None or request.task_id not in self._servers:
             raise CommandRejected("Unknown or undeployed task")
-        if (request.instructions != "choose_repair_from_failed_proof_evidence"
-                or not request.failed_evidence
-                or request.evidence != tuple(item.evidence_id for item in request.failed_evidence)
-                or not any(item.condition_id == "C2" and item.operation == "json_value"
-                           and item.expected == "True" and item.observed == "False"
-                           and item.status == "FAILED" for item in request.failed_evidence)):
+        shared = (bool(request.failed_evidence)
+                  and request.evidence == tuple(item.evidence_id for item in request.failed_evidence))
+        legacy = (request.instructions == "choose_repair_from_failed_proof_evidence"
+                  and any(item.condition_id == "C2" and item.operation == "json_value"
+                          and item.expected == "True" and item.observed == "False"
+                          and item.status == "FAILED" for item in request.failed_evidence))
+        scenario = (request.instructions == "choose_repair_from_verified_schema_evidence"
+                    and bool(request.source_run_id and request.contract_id)
+                    and len(request.failed_evidence) == 1
+                    and all(item.evidence_id and item.condition_id
+                            and item.operation == "json_value" and item.expected == "True"
+                            and item.observed == "False" and item.status == "FAILED"
+                            and item.target_ref == "production" and item.route_ref == "schema"
+                            and item.json_path == "auth_sessions_exists"
+                            and item.source_run_id == request.source_run_id
+                            for item in request.failed_evidence))
+        if not shared or not (legacy or scenario):
             raise CommandRejected("Repair requires failed production-schema evidence")
         database = self.workspace_path(Path(original.workspace), "production.sqlite")
         if not database.is_file():
