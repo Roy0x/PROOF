@@ -5,6 +5,7 @@ import json
 import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Callable
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -204,7 +205,12 @@ class AgentVerificationLoop:
             raise ValueError("Proof Packs must be under a disposable temporary root")
         self.store = ProofPackStore(root)
 
-    def run(self, goal: str = GOAL) -> LoopOutcome:
+    def run(self, goal: str = GOAL, *,
+            on_progress: Callable[[str, dict], None] | None = None) -> LoopOutcome:
+        def emit(stage: str, **data) -> None:
+            if on_progress is not None:
+                on_progress(stage, data)
+
         browser = BrowserVerifier()
         prefix = uuid4().hex
         first_run, second_run = f"{prefix}_1", f"{prefix}_2"
@@ -212,18 +218,26 @@ class AgentVerificationLoop:
             worker = NemotronCodingWorkerAdapter(Path(temporary) / "workspaces", self.client)
             try:
                 task = WorkerTask(goal)
+                emit("worker_running")
                 first_worker = worker.run_task(task)
                 if first_worker.claim.status != "COMPLETED" or first_worker.command_results[-1].exit_code != 0:
                     raise RuntimeError("Model-selected patch did not pass real local tests")
+                emit("worker_completed", claim=first_worker.claim.status,
+                     model_id=worker.decision_records[0].model_id)
                 context = scenario_context(worker, task.task_id, first_worker.workspace)
                 workflow = IntelligenceWorkflow(self.client, context)
                 prepared = workflow.prepare(goal, trusted_requirements=ACCEPTANCE,
                     required_checks=REQUIRED_CHECKS, contract_guard=validate_scenario_contract,
-                    plan_guard=lambda item: validate_scenario_plan(item, context))
+                    plan_guard=lambda item: validate_scenario_plan(item, context),
+                    on_contract_frozen=lambda contract: emit("contract_frozen",
+                        contract_id=contract.contract_id, condition_count=len(contract.conditions)),
+                    on_plan_validated=lambda item: emit("plan_validated",
+                        plan_fingerprint=workflow._fingerprint(item)))
                 fingerprint = workflow._fingerprint(prepared)
                 engine = VerificationEngine(VerifierRegistry({
                     "http": HTTPVerifier(), "browser": browser, "shell": ShellVerifier()}))
                 artifact_root = str(self.store.root / "artifacts")
+                emit("verification_running")
                 first = workflow.verify(prepared, engine, first_run, artifact_root=artifact_root)
                 first.intelligence.update({
                     "model_execution": self.execution_mode,
@@ -236,14 +250,19 @@ class AgentVerificationLoop:
                 })
                 first_path = self.store.save(first)
                 first_bytes = first_path.read_bytes()
+                emit("first_pack_saved", run_id=first.run_id, verdict=first.verdict)
                 browser.close(first_run)
                 if first.verdict != "FAILED":
                     raise RuntimeError("Production defect was not independently detected")
                 request = repair_request_from_evidence(first, prepared, context, self.store,
                                                        first_run, task.task_id, fingerprint)
+                emit("failed_evidence_confirmed", evidence_id=request.evidence[0])
+                emit("repair_running")
                 repaired = worker.repair_task(request)
                 if repaired.claim.status != "COMPLETED" or repaired.command_results[-1].exit_code != 0:
                     raise RuntimeError("Model-selected repair did not pass local checks")
+                emit("repair_applied", migration_ref=worker.decision_records[-1].selected_value)
+                emit("reverification_running")
                 second = workflow.verify(prepared, engine, second_run, artifact_root=artifact_root)
                 second.intelligence.update({
                     "model_execution": self.execution_mode,
@@ -261,6 +280,7 @@ class AgentVerificationLoop:
                     raise RuntimeError("First Proof Pack changed during reverification")
                 if second.verdict != "VERIFIED":
                     raise RuntimeError("Independent reverification did not verify deployment")
+                emit("second_pack_saved", run_id=second.run_id, verdict=second.verdict)
                 return LoopOutcome(first, second, first_path, second_path, prepared, fingerprint,
                                    first_worker, repaired, request, self.client.usage_summary(),
                                    self.execution_mode, Path(first_worker.workspace))

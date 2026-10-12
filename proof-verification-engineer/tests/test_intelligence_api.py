@@ -20,6 +20,7 @@ class FakeClient:
 
 
 def test_prepare_endpoint_uses_server_context_and_returns_structured_plan(monkeypatch, tmp_path):
+    monkeypatch.setenv("PROOF_ENABLE_LEGACY_LIVE_API", "1")
     monkeypatch.setenv("PROOF_PRODUCTION_BASE_URL", "http://127.0.0.1:8080/demo-app")
     monkeypatch.setenv("PROOF_WORKSPACE", str(tmp_path))
     monkeypatch.setenv("PROOF_TEST_PASSWORD", "fake-password")
@@ -33,6 +34,7 @@ def test_prepare_endpoint_uses_server_context_and_returns_structured_plan(monkey
 
 
 def test_prepare_endpoint_missing_key_fails_without_fallback(monkeypatch):
+    monkeypatch.setenv("PROOF_ENABLE_LEGACY_LIVE_API", "1")
     monkeypatch.setenv("PROOF_PRODUCTION_BASE_URL", "https://example.com")
     monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
     response = TestClient(app).post("/api/v0.4/prepare", json={"goal": GOAL})
@@ -42,6 +44,7 @@ def test_prepare_endpoint_missing_key_fails_without_fallback(monkeypatch):
 
 
 def test_prepare_endpoint_invalid_provider_url_is_structured_error(monkeypatch):
+    monkeypatch.setenv("PROOF_ENABLE_LEGACY_LIVE_API", "1")
     monkeypatch.setenv("PROOF_PRODUCTION_BASE_URL", "https://example.com")
     monkeypatch.setenv("NEBIUS_BASE_URL", "file:///secret")
     response = TestClient(app).post("/api/v0.4/prepare", json={"goal": GOAL})

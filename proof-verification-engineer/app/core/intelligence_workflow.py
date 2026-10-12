@@ -34,17 +34,23 @@ class IntelligenceWorkflow:
     def prepare(self, goal: str, *, trusted_requirements: tuple[dict[str, str], ...] | None = None,
                 required_checks: dict[str, dict] | None = None,
                 contract_guard: Callable[[FrozenOutcomeContract], None] | None = None,
-                plan_guard: Callable[[PreparedVerification], None] | None = None) -> PreparedVerification:
+                plan_guard: Callable[[PreparedVerification], None] | None = None,
+                on_contract_frozen: Callable[[FrozenOutcomeContract], None] | None = None,
+                on_plan_validated: Callable[[PreparedVerification], None] | None = None) -> PreparedVerification:
         contract = OutcomeContractCompiler(self._client).compile(
             goal, self._context, trusted_requirements=trusted_requirements)
         if contract_guard is not None:
             contract_guard(contract)  # before any planner calls
+        if on_contract_frozen is not None:
+            on_contract_frozen(contract)
         plan = VerificationPlanner(self._client).plan(
             contract, self._context.manifest(), self._context, required_checks=required_checks)
         prepared = PreparedVerification(contract, plan)
         if plan_guard is not None:
             plan_guard(prepared)
         self._prepared_hashes[contract.contract_id] = self._fingerprint(prepared)
+        if on_plan_validated is not None:
+            on_plan_validated(prepared)
         return prepared
 
     def verify(self, prepared: PreparedVerification, engine: VerificationEngine, run_id: str,

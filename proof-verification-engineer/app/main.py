@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from .api.intelligence import router as intelligence_router
+from .api.workspace import router as workspace_router
 
 from .core.contracts import contract_to_dict
 from .evidence.models import report_to_dict
@@ -22,6 +23,7 @@ STATIC_DIR = BASE_DIR / "static"
 app = FastAPI(title="PROOF — Verification Engineer for AI Agents", version="0.1.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(intelligence_router)
+app.include_router(workspace_router)
 
 # Controlled demo application state. The worker initially deploys a subtle production bug.
 demo_state: dict[str, Any] = {"release": "broken", "repair_cycles": 0}
@@ -42,7 +44,7 @@ def startup() -> None:
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
-    return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return (STATIC_DIR / "workspace.html").read_text(encoding="utf-8")
 
 
 @app.get("/api/health")
@@ -57,6 +59,8 @@ def health() -> dict[str, Any]:
 
 @app.post("/api/contracts/generate")
 def generate_contract(request: ContractRequest) -> dict[str, Any]:
+    if os.getenv("PROOF_ENABLE_LEGACY_LIVE_API") != "1":
+        raise HTTPException(status_code=403, detail="Live model API is disabled")
     contract = generate_contract_with_nebius(request.goal)
     return contract_to_dict(contract)
 

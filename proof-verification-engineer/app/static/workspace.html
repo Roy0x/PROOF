@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1015">
+  <title>PROOF — Verification workspace</title>
+  <link rel="stylesheet" href="/static/workspace.css">
+  <script src="/static/workspace.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Workspace navigation">
+      <a class="brand" href="#overview" aria-label="PROOF overview">
+        <span class="brand-symbol" aria-hidden="true">P<span class="brand-period">.</span></span>
+        <span class="brand-copy"><strong>PROOF</strong><small>VERIFICATION ENGINEER</small></span>
+      </a>
+      <div class="rail-label">WORKSPACE</div>
+      <nav class="rail-nav">
+        <a class="rail-link active" href="#overview"><span class="rail-icon">◫</span>Overview</a>
+        <a class="rail-link" href="#timeline"><span class="rail-icon">⤳</span>Timeline</a>
+        <a class="rail-link" href="#evidence"><span class="rail-icon">▤</span>Evidence</a>
+        <a class="rail-link" href="#repair"><span class="rail-icon">◇</span>Repair</a>
+        <a class="rail-link" href="#packs"><span class="rail-icon">▣</span>Proof Packs</a>
+      </nav>
+      <div class="rail-spacer"></div>
+      <div class="rail-note">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <div><strong>Local verification</strong><small>Offline model · real checks</small></div>
+      </div>
+      <p class="rail-footer">Agents act. PROOF verifies.</p>
+    </aside>
+
+    <main class="content" id="overview">
+      <header class="masthead">
+        <div class="crumb"><span>WORKSPACE</span><span class="crumb-separator">/</span><strong>Outcome verification</strong></div>
+        <div class="masthead-right"><span class="secure-mark">●</span> LOCAL · ZERO PROVIDER REQUESTS</div>
+      </header>
+
+      <section class="hero" id="hero" aria-labelledby="hero-heading">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="line"></span> INDEPENDENT VERIFICATION WORKSPACE</div>
+          <h1 id="hero-heading">Agents act.<br> <em>PROOF verifies.</em></h1>
+          <p>When an agent says the job is done, PROOF asks the environment. Inspect the frozen contract, real verifier evidence, and the repair that changes the outcome.</p>
+          <div class="hero-actions">
+            <button class="button button-primary" id="run-button" type="button"><span class="button-icon">▶</span> Run verification</button>
+            <span class="action-note">Disposable loopback app · mocked model decisions</span>
+          </div>
+        </div>
+        <div class="hero-terminal" aria-label="Verification principle">
+          <div class="terminal-top"><span class="terminal-dots">● ● ●</span><span>proof / trust-boundary</span></div>
+          <div class="terminal-body">
+            <div><span class="term-key">worker.claim</span><span class="term-equals">=</span><span class="term-muted">await worker</span></div>
+            <div><span class="term-key">proof.verdict</span><span class="term-equals">=</span><span class="term-muted">await evidence</span></div>
+            <div class="term-rule"></div>
+            <div class="term-comment">// Claims are not evidence.</div>
+            <div class="term-comment">// Reality determines the verdict.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="run-overview section" aria-labelledby="overview-heading">
+        <div class="section-header"><div><div class="eyebrow">CURRENT RUN</div><h2 id="overview-heading">Run overview</h2></div><span id="run-status" class="status-chip idle" role="status">NOT STARTED</span></div>
+        <div class="overview-grid">
+          <div class="panel task-panel">
+            <div class="field-label">TASK UNDER VERIFICATION</div>
+            <div class="task-quote">“Fix the login bug and deploy the application.”</div>
+            <p>This controlled scenario uses a real local coding workspace, loopback deployment, and separate production SQLite database.</p>
+            <div class="task-meta"><span>SCENARIO</span><strong>Production login repair</strong><span>MODE</span><strong id="execution-mode">Offline demonstration · offline_mock</strong><span>RUN ID</span><code id="current-run-id">—</code></div>
+          </div>
+          <div class="panel identity-panel"><div class="field-label">MODEL & CONTRACT</div><div class="identity-line"><span>Worker model</span><strong id="worker-model">—</strong></div><div class="identity-line"><span>Contract</span><code id="contract-id">—</code></div><div class="identity-line"><span>Plan fingerprint</span><code id="plan-id">—</code></div></div>
+        </div>
+        <div id="outcome-summary" class="outcome-summary hidden" aria-label="Run outcome summary" aria-live="polite"></div>
+        <div class="claim-grid" aria-live="polite">
+          <article class="claim-card worker-card"><span class="field-label">01 · AGENT SELF-REPORT</span><span class="claim-kicker">WORKER CLAIM</span><strong id="worker-claim">AWAITING RUN</strong><p>A worker completion claim is recorded, but it never sets the PROOF verdict.</p></article>
+          <div class="versus" aria-hidden="true">≠</div>
+          <article class="claim-card proof-card"><span class="field-label">02 · INDEPENDENT CHECK</span><span class="claim-kicker">PROOF RUN 1</span><strong id="first-verdict">AWAITING EVIDENCE</strong><p id="first-verdict-note">The verifier has not yet produced evidence.</p></article>
+        </div>
+        <div id="failure-explanation" class="failure-explanation hidden"></div>
+        <div id="run-error" class="error-panel hidden" role="alert"></div>
+      </section>
+
+      <section class="section" id="timeline" aria-labelledby="timeline-heading">
+        <div class="section-header"><div><div class="eyebrow">AUDIT TRAIL</div><h2 id="timeline-heading">Verification timeline</h2></div><span class="section-hint">Events appear only when the backend reaches them</span></div>
+        <div class="timeline-grid" id="timeline-list" aria-live="polite"></div>
+      </section>
+
+      <section class="section" id="evidence" aria-labelledby="evidence-heading">
+        <div class="section-header"><div><div class="eyebrow">ASK REALITY</div><h2 id="evidence-heading">Evidence explorer</h2></div><div class="run-switch" role="group" aria-label="Verification run"><button id="show-first" class="switch active" type="button">RUN 1 · BEFORE REPAIR</button><button id="show-second" class="switch" type="button">RUN 2 · AFTER REPAIR</button></div></div>
+        <div id="evidence-empty" class="empty-state panel"><div class="empty-symbol">▤</div><strong>No verification evidence yet</strong><p>Start the offline loop to see real HTTP, Browser, and Shell observations.</p></div>
+        <div id="evidence-content" class="hidden">
+          <div class="evidence-summary"><span id="evidence-run-label">RUN 1</span><strong id="evidence-verdict">—</strong><code id="evidence-run-id">—</code></div>
+          <div id="conditions-list" class="conditions-list"></div>
+          <span id="copy-feedback" class="visually-hidden" role="status" aria-live="polite"></span>
+          <div id="schema-compare" class="compare-panel panel hidden"></div>
+        </div>
+      </section>
+
+      <section class="section section-split" id="repair" aria-labelledby="repair-heading">
+        <div class="repair-area"><div class="section-header"><div><div class="eyebrow">EVIDENCE-DRIVEN ACTION</div><h2 id="repair-heading">Repair decision</h2></div></div><div id="repair-content" class="panel repair-panel"><p class="muted">No authorized repair has been recorded.</p></div></div>
+        <div class="outcome-area"><div class="section-header"><div><div class="eyebrow">FROZEN GOALPOSTS</div><h2>Reverification</h2></div></div><div id="outcome-content" class="panel outcome-panel"><p class="muted">The second independent verification has not run.</p></div></div>
+      </section>
+
+      <section class="section" id="packs" aria-labelledby="packs-heading">
+        <div class="section-header"><div><div class="eyebrow">DURABLE ARTIFACTS</div><h2 id="packs-heading">Proof Packs</h2></div><span class="section-hint">Redacted exports from actual persisted JSON</span></div>
+        <div id="packs-list" class="packs-grid"><div class="empty-state panel"><div class="empty-symbol">▣</div><strong>No Proof Packs yet</strong><p>Each independent verification run creates its own artifact.</p></div></div>
+        <div id="pack-inspector" class="panel pack-inspector hidden"><div class="inspector-head"><div><span class="eyebrow">REDACTED JSON</span><h3 id="inspector-title">Proof Pack</h3></div><button id="close-inspector" class="button button-ghost" type="button">Close</button></div><pre id="pack-json"></pre></div>
+      </section>
+
+      <footer class="footer"><span>PROOF / VERIFICATION WORKSPACE</span><span>Model proposes checks. Deterministic evidence decides.</span></footer>
+    </main>
+  </div>
+</body>
+</html>

@@ -43,6 +43,8 @@ def configured_context() -> TrustedContext:
 
 @router.post("/prepare")
 def prepare(request: PrepareRequest) -> dict:
+    if os.getenv("PROOF_ENABLE_LEGACY_LIVE_API") != "1":
+        raise HTTPException(status_code=403, detail="Live model API is disabled")
     try:
         context = configured_context()
         workflow = IntelligenceWorkflow(TokenFactoryClient(), context)

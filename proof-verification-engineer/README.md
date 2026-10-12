@@ -43,9 +43,9 @@ VERIFIED
 - A controlled coding/deployment demo with a realistic production-only auth failure.
 - Evidence-backed FAIL / BLOCKED / VERIFIED verdicts.
 - Repair → re-verification loop using the **same frozen contract**.
-- SQLite Proof Pack persistence.
-- Dashboard and audit trail UI.
-- Zero-cost deterministic v0.3 demo and offline mocked v0.4 tests.
+- Durable JSON Proof Packs for independent verification runs.
+- v0.8 local verification workspace with a timeline, evidence explorer, repair view, and redacted Proof Pack exports.
+- Zero-cost offline tests and a default web demo with mocked model decisions and real local verifier execution.
 
 ## Built-in demo
 
@@ -55,14 +55,13 @@ The worker receives:
 
 It makes a plausible completion claim after local success, but the controlled production target still has a missing authentication schema migration.
 
-PROOF independently tests:
+In the default v0.8 workspace, PROOF independently tests:
 
-1. Production reachable
-2. Login UI renders
-3. Valid authentication succeeds
-4. Invalid authentication is rejected
-5. Authenticated dashboard loads
-6. Regression smoke suite passes
+1. The deployed home page responds with HTTP 200.
+2. The production `auth_sessions` schema exists.
+3. Valid production authentication succeeds.
+4. Local regression tests pass.
+5. The authenticated dashboard is accessible.
 
 The first run catches the production-only failure. The evidence is returned to the worker, the demo worker repairs the deployment, and PROOF executes the **same** contract again. Only then is the result marked `VERIFIED`.
 
@@ -78,12 +77,12 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://localhost:8000`.
+Open `http://127.0.0.1:8000/`.
 
-No Nebius key is needed for the local v0.3 demo. The v0.4 preparation endpoint returns a structured error if live inference is unavailable.
+No Nebius key is needed for the default v0.8 workspace. Its Run Verification button makes zero provider requests. Older HTTP endpoints that can call a live model are disabled by default; a developer must explicitly set `PROOF_ENABLE_LEGACY_LIVE_API=1` to use them. With that opt-in, the v0.4 preparation endpoint returns a structured error if live inference is unavailable.
 
 ## Enable NVIDIA Nemotron on Nebius Token Factory
 
@@ -169,11 +168,17 @@ The first explicitly opted-in, fully live v0.7 demonstration succeeded with `nvi
 
 The scenario supplies five trusted acceptance references to the compiler: public home reachability, valid production authentication, authenticated dashboard, production session schema, and local regression tests. Nemotron proposes the condition IDs, descriptions, order, and dependencies; PROOF freezes and validates them. The planner sees the frozen condition and a trusted required-check hint, then proposes executable steps. PROOF rejects plans that do not cover the exact trusted operations and refs, including the independent `http.json_value` probe on `/health/schema` with `auth_sessions_exists=true`. These checks are scenario-specific; they do not turn model descriptions into evidence or let the model set a verdict.
 
-After the first independent FAILED run, the v0.7 loop matches the schema failure to the current persisted Proof Pack, frozen plan, evidence ID, actual GET URL, and `expected=True/observed=False`. It uses the original model-generated condition ID, never an assumed `C2`. Only then may the worker model select the fixed `auth_sessions_v1` migration reference; trusted code checks database preconditions and applies fixed SQL. PROOF reverifies the **same** contract and plan with fresh evidence, preserving the first FAILED pack. Both packs include the immutable plan fingerprint, contract/plan provenance, worker decision metadata, actual request counts and usage when available, and `offline_mock` or `live_nebius` labeling. Raw prompts, reasoning, credentials, and API keys are not stored. This demonstration is limited to a disposable loopback login app, fake test credentials, a fixed migration allowlist, and exact scenario-specific acceptance checks. It is not a general autonomous deployment agent, a real production deployment, an OS security sandbox, or a frontend integration.
+After the first independent FAILED run, the v0.7 loop matches the schema failure to the current persisted Proof Pack, frozen plan, evidence ID, actual GET URL, and `expected=True/observed=False`. It uses the original model-generated condition ID, never an assumed `C2`. Only then may the worker model select the fixed `auth_sessions_v1` migration reference; trusted code checks database preconditions and applies fixed SQL. PROOF reverifies the **same** contract and plan with fresh evidence, preserving the first FAILED pack. Both packs include the immutable plan fingerprint, contract/plan provenance, worker decision metadata, actual request counts and usage when available, and `offline_mock` or `live_nebius` labeling. Raw prompts, reasoning, credentials, and API keys are not stored. This demonstration is limited to a disposable loopback login app, fake test credentials, a fixed migration allowlist, and exact scenario-specific acceptance checks. It is not a general autonomous deployment agent, a real production deployment, or an OS security sandbox.
+
+## v0.8 local verification workspace
+
+Start the local server with `.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000` from the project directory, then open `http://127.0.0.1:8000/`. Select **Run verification** once. The workspace always uses the **offline v0.7 scenario**: mocked, scripted model decisions, but a real isolated source edit, local tests, loopback app, independent HTTP/Browser/Shell checks, production SQLite migration, and two persisted Proof Packs. It never makes Nebius requests. The worker claim and PROOF verdict are deliberately separate; the timeline, evidence explorer, repair panel, and before/after comparison derive from actual backend events and packs. After completion, the hero shrinks to a results header and the outcome summary shows the four observed stages. Evidence IDs are shortened for readability; **Copy ID** copies the complete identifier, and Proof Pack inspection retains the complete redacted record. The failed-run explanation states the schema and dashboard observations without inferring a cause.
+
+Runs execute in a background thread so polling remains responsive. A second run cannot overlap an active run. A run exceeding five minutes is marked timed out; its thread must finish before another run may begin. The browser reads only job-scoped, integrity-checked, redacted Proof Pack projections. **Inspect JSON** and **Download redacted JSON** do not expose raw pack files, HTTP bodies, subprocess output, screenshots, credential references, or local paths. Original packs remain in the OS temporary directory outside the repository; exports are filtered views and are not substitutes for the full internal artifacts. Run records live only for this server process; a restart clears the in-memory run index. There is a 12-run session limit and no history database or multi-user authentication. Bind the development server to loopback only. Legacy live-model API routes require the explicit server-side opt-in above; the v0.8 workspace never calls them.
 
 ## Submission roadmap
 
-The v0.4 backend covers contract compilation, plan validation, deterministic execution, and provenance. The UI remains the v0.3 demo; connecting its controlled login scenario to the v0.4 preparation endpoint is future work.
+The v0.8 workspace presents the existing controlled v0.7 loop without changing the deterministic verdict engine. General-purpose user-supplied goals and authenticated multi-user deployment remain future work.
 
 Do **not** expand into observability, generic benchmarks, security scanning, or a full agent framework before the verification loop is reliable.
 
