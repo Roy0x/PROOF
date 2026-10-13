@@ -37,6 +37,13 @@ class ContractRequest(BaseModel):
     goal: str
 
 
+def _require_legacy_demo(*, paid: bool = False) -> None:
+    if os.getenv("PROOF_ENABLE_LEGACY_DEMO_API") != "1":
+        raise HTTPException(status_code=403, detail="Legacy demo API is disabled")
+    if paid and os.getenv("PROOF_ENABLE_LEGACY_LIVE_API") != "1":
+        raise HTTPException(status_code=403, detail="Live model API is disabled")
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_db()
@@ -67,6 +74,7 @@ def generate_contract(request: ContractRequest) -> dict[str, Any]:
 
 @app.post("/api/demo/reset")
 def reset_demo() -> dict[str, Any]:
+    _require_legacy_demo()
     demo_state["release"] = "broken"
     demo_state["repair_cycles"] = 0
     return {"status": "reset", "release": demo_state["release"]}
@@ -74,6 +82,7 @@ def reset_demo() -> dict[str, Any]:
 
 @app.post("/api/demo/repair")
 def repair_demo() -> dict[str, Any]:
+    _require_legacy_demo()
     demo_state["release"] = "fixed"
     demo_state["repair_cycles"] += 1
     return {
@@ -86,6 +95,7 @@ def repair_demo() -> dict[str, Any]:
 
 @app.post("/api/demo/run")
 async def run_demo(payload: DemoRunRequest, request: Request) -> dict[str, Any]:
+    _require_legacy_demo(paid=True)
     # 1) Worker claims completion while a production-only auth issue remains.
     demo_state["release"] = "broken"
     demo_state["repair_cycles"] = 0

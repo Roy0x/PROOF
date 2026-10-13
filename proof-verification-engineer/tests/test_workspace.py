@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.api import workspace as workspace_api
 from app.core.workspace_service import WorkspaceRunService
-from app.main import app
+from app.main import app, demo_state
 
 
 def _wait(service: WorkspaceRunService, job_id: str, timeout: float = 120) -> dict:
@@ -194,6 +194,35 @@ def test_legacy_live_model_routes_are_disabled_by_default(monkeypatch):
     client = TestClient(app)
     assert client.post("/api/contracts/generate", json={"goal": "test"}).status_code == 403
     assert client.post("/api/v0.4/prepare", json={"goal": "test"}).status_code == 403
+
+
+def test_legacy_demo_mutations_and_paid_run_are_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("PROOF_ENABLE_LEGACY_DEMO_API", raising=False)
+    monkeypatch.delenv("PROOF_ENABLE_LEGACY_LIVE_API", raising=False)
+    calls = []
+    monkeypatch.setattr("app.main.generate_contract_with_nebius", lambda *args: calls.append(args))
+    client = TestClient(app)
+    before = dict(demo_state)
+    try:
+        assert client.post("/api/demo/reset").status_code == 403
+        assert client.post("/api/demo/repair").status_code == 403
+        assert client.post("/api/demo/run", json={}).status_code == 403
+        assert calls == []
+        assert demo_state == before
+
+        monkeypatch.setenv("PROOF_ENABLE_LEGACY_DEMO_API", "1")
+        assert client.post("/api/demo/run", json={}).status_code == 403
+        assert calls == []
+        assert client.post("/api/demo/reset").status_code == 200
+        assert client.post("/api/demo/repair").status_code == 200
+        monkeypatch.setenv("PROOF_ENABLE_LEGACY_LIVE_API", "1")
+        def enabled_stub(goal):
+            raise RuntimeError("mock provider reached")
+        monkeypatch.setattr("app.main.generate_contract_with_nebius", enabled_stub)
+        with pytest.raises(RuntimeError, match="mock provider reached"):
+            client.post("/api/demo/run", json={})
+    finally:
+        demo_state.update(before)
 
 
 def test_workspace_frontend_uses_only_offline_evidence_api():
